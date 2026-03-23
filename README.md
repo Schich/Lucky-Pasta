@@ -1,4 +1,4 @@
-# Project Title
+# Lucky-Pasta
 
 Lucky-Pasta is a lightweight shellcode loader designed with an emphasis on stealth and evasion techniques. It incorporates runtime protections such as just-in-time decryption, string obfuscation, and dynamic library loading to reduce static and behavioral detection. The loader executes payloads using fibers and applies runtime patching of AES-related CPU instructions to further limit analysis visibility. It supports secure retrieval of shellcode over HTTP and HTTPS, enabling flexible and controlled delivery.
 
