@@ -1,9 +1,9 @@
 #pragma once
 #include <windows.h>
 
-#define INV_A 13
-#define A 197
-#define B 101
+#define INV_A 143
+#define A 111
+#define B 65
 
 #define OBF_BYTE(x) ((unsigned char)((A * (x) + B) & 0xFF))
 #define DEOBF_BYTE(x) ((unsigned char)((INV_A * ((x) - B)) & 0xFF))

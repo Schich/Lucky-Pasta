@@ -19,11 +19,9 @@ void ToLowerW(WCHAR *str) {
 
 void DecodeString(char *out, const unsigned char *in) {
   size_t i = 0;
-  while (in[i]) {
-    out[i] = DEOBF_BYTE(in[i]);
+  while (out[i] = DEOBF_BYTE(in[i])) {
     i++;
   }
-  out[i] = 0;
 }
 
 BOOL CompareUnicodeString(UNICODE_STRING str1, LPCWSTR str2) {
