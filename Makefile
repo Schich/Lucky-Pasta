@@ -3,8 +3,8 @@ CC = x86_64-w64-mingw32-gcc
 WINDRES = x86_64-w64-mingw32-windres
 
 # flags
-CFLAGS = -Os -std=c99 -D_WINDOWS -D_MINGW_USE_STD_THREAD -fstack-protector -mwindows
-LDFLAGS = -Wl,--no-insert-timestamp -Wl,--dynamicbase -Wl,--nxcompat
+CFLAGS = -O5 -std=c99 -D_WINDOWS -D_MINGW_USE_STD_THREAD -fstack-protector -mwindows
+LDFLAGS = -Wl,--no-insert-timestamp -Wl,--dynamicbase -Wl,--nxcompat 
 
 # directories
 INC_DIR = ./inc
@@ -32,6 +32,8 @@ all: $(OUT_FILE) $(OUT_FILE_ENCRYPTOR)
 $(OUT_FILE): $(OBJ) $(RES_FILE) $(MANIFEST_RES)
 	@echo "Linking the executable with resources and manifest..."
 	$(CC) $(LDFLAGS) $(OBJ) $(RES_FILE) $(MANIFEST_RES) -o $@
+	strip $(OUT_FILE)
+	
 
 # compile C sources
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
