@@ -12,8 +12,6 @@ Lucky-Pasta is a lightweight shellcode loader designed with an emphasis on steal
 - Runtime patching of AES CPU instructions to avoid static detection
 - Retrieves shellcode with http or https 
 
-
-````markdown
 ## Usage
 
 ### Build
