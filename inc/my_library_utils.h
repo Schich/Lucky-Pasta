@@ -57,3 +57,5 @@ FARPROC ResolveKernel32Obf(const unsigned char *enc, HMODULE *dllModule, const u
 FARPROC ResolveObf(const unsigned char *enc, HMODULE *dllModule, const unsigned char *dllNameEnc);
 
 void DecodeString(char *out, const unsigned char *in);
+
+static const unsigned char x = OBF_BYTE(0x60);

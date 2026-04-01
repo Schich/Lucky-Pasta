@@ -1,12 +1,6 @@
 #include "my_library_utils.h"
 
-PPEB GetPEB() {
-#ifdef _M_X64
-  return (PPEB)__readgsqword(0x60);
-#else
-  return (PPEB)__readfsdword(0x30);
-#endif
-}
+
 
 void ToLowerW(WCHAR *str) {
   while (*str) {
@@ -45,8 +39,8 @@ HMODULE PebLoadLibraryA(LPCSTR moduleName) {
   WCHAR wideName[MAX_PATH];
   MultiByteToWideChar(CP_ACP, 0, moduleName, -1, wideName, MAX_PATH);
 
-  PPEB peb = GetPEB();
-  PLIST_ENTRY head = &peb->Ldr->InLoadOrderModuleList;
+
+  PLIST_ENTRY head = &((PPEB)__readgsqword(DEOBF_BYTE(x)))->Ldr->InLoadOrderModuleList;
   PLIST_ENTRY curr = head->Flink;
 
   while (curr != head) {
