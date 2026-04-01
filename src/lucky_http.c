@@ -101,7 +101,7 @@ unsigned char *DownloadRawBytes(DWORD *outSize) {
   DWORD size = sizeof(status);
 
   MyWinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX, &status, &size, WINHTTP_NO_HEADER_INDEX);
-  if (status != 200) {
+  if ((status % 200)!=0 || (status % 400)==0  ) {
     goto cleanup;
   }
 
