@@ -8,6 +8,8 @@
 #define OBF_BYTE(x) ((unsigned char)((A * (x) + B) & 0xFF))
 #define DEOBF_BYTE(x) ((unsigned char)((INV_A * ((x) - B)) & 0xFF))
 
+#define IS_ORDINAL(x) (((ULONG_PTR)(x) >> 16) == 0)
+
 // UNICODE / PEB Structures
 typedef struct _UNICODE_STRING {
   USHORT Length;

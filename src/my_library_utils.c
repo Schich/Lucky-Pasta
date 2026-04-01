@@ -53,6 +53,9 @@ HMODULE PebLoadLibraryA(LPCSTR moduleName) {
 
   return NULL;
 }
+
+
+
 FARPROC PebGetProcAddress(HMODULE hModule, LPCSTR procName);
 
 FARPROC ResolveForwardedExport(const char* forwarder) {
@@ -63,24 +66,36 @@ FARPROC ResolveForwardedExport(const char* forwarder) {
     const char* dot = strchr(forwarder, '.');
     if (!dot) return NULL;
 
-    size_t dllLen = dot - forwarder;
-    strncpy(dllName, forwarder, dllLen);
+    size_t dllLen = (size_t)(dot - forwarder);
+
+    // Safe copy of DLL name
+    if (dllLen >= MAX_PATH)
+        dllLen = MAX_PATH - 1;
+
+    memcpy(dllName, forwarder, dllLen);
     dllName[dllLen] = '\0';
 
-    strcpy(funcName, dot + 1);
+    // Copy function name safely
+    strncpy(funcName, dot + 1, sizeof(funcName) - 1);
+    funcName[sizeof(funcName) - 1] = '\0';
 
-    // Append ".dll" if not present
+    // Append ".dll" if missing
     if (!strstr(dllName, ".dll")) {
-        strcat(dllName, ".dll");
+        size_t len = strlen(dllName);
+        if (len + 4 < MAX_PATH) {
+            strcat(dllName, ".dll");
+        } else {
+            return NULL;
+        }
     }
 
-    HMODULE hForwardModule = LoadLibraryA(dllName);
+    HMODULE hForwardModule = MyLoadLibraryA(dllName);
     if (!hForwardModule) return NULL;
 
     // Handle ordinal forward: "DLL.#123"
     if (funcName[0] == '#') {
-        int ordinal = atoi(funcName + 1);
-        return PebGetProcAddress(hForwardModule, (LPCSTR)ordinal);
+        WORD ordinal = (WORD)atoi(funcName + 1);
+        return PebGetProcAddress(hForwardModule, (LPCSTR)(ULONG_PTR)ordinal);
     }
 
     return PebGetProcAddress(hForwardModule, funcName);
@@ -88,57 +103,87 @@ FARPROC ResolveForwardedExport(const char* forwarder) {
 
 
 FARPROC PebGetProcAddress(HMODULE hModule, LPCSTR procName) {
+    if (!hModule || !procName)
+        return NULL;
+
     PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)hModule;
-    PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((BYTE*)hModule + dosHeader->e_lfanew);
+    if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+        return NULL;
 
-    DWORD exportDirRVA = ntHeaders->OptionalHeader
-        .DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+    PIMAGE_NT_HEADERS ntHeaders =
+        (PIMAGE_NT_HEADERS)((BYTE*)hModule + dosHeader->e_lfanew);
 
-    DWORD exportDirSize = ntHeaders->OptionalHeader
-        .DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+    if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
+        return NULL;
 
-    if (!exportDirRVA) return NULL;
+    DWORD exportDirRVA =
+        ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+
+    DWORD exportDirSize =
+        ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+
+    if (!exportDirRVA || !exportDirSize)
+        return NULL;
 
     PIMAGE_EXPORT_DIRECTORY exportDir =
         (PIMAGE_EXPORT_DIRECTORY)((BYTE*)hModule + exportDirRVA);
 
-    DWORD* nameRvas = (DWORD*)((BYTE*)hModule + exportDir->AddressOfNames);
-    WORD* ordinals = (WORD*)((BYTE*)hModule + exportDir->AddressOfNameOrdinals);
-    DWORD* funcRvas = (DWORD*)((BYTE*)hModule + exportDir->AddressOfFunctions);
+    DWORD* nameRvas =
+        (DWORD*)((BYTE*)hModule + exportDir->AddressOfNames);
 
-    // 🔹 Handle ordinal lookup
-    if ((ULONG_PTR)procName <= 0xFFFF) {
-        WORD ordinal = (WORD)procName - exportDir->Base;
+    WORD* ordinals =
+        (WORD*)((BYTE*)hModule + exportDir->AddressOfNameOrdinals);
+
+    DWORD* funcRvas =
+        (DWORD*)((BYTE*)hModule + exportDir->AddressOfFunctions);
+
+    // ORDINAL LOOKUP
+    if (IS_ORDINAL(procName)) {
+        WORD ordinal = (WORD)((ULONG_PTR)procName & 0xFFFF);
+
+        if (ordinal < exportDir->Base)
+            return NULL;
+
+        ordinal -= exportDir->Base;
 
         if (ordinal >= exportDir->NumberOfFunctions)
             return NULL;
 
         DWORD funcRva = funcRvas[ordinal];
 
-        // Check forwarder
-        if (funcRva >= exportDirRVA && funcRva < exportDirRVA + exportDirSize) {
-            char* forwarder = (char*)hModule + funcRva;
+        // Forwarded export check
+        if (funcRva >= exportDirRVA &&
+            funcRva < exportDirRVA + exportDirSize) {
+
+            const char* forwarder =
+                (const char*)hModule + funcRva;
+
             return ResolveForwardedExport(forwarder);
         }
 
         return (FARPROC)((BYTE*)hModule + funcRva);
     }
 
-    // 🔹 Name lookup
+    // NAME LOOKUP
     for (DWORD i = 0; i < exportDir->NumberOfNames; i++) {
-        char* name = (char*)hModule + nameRvas[i];
+        const char* name =
+            (const char*)hModule + nameRvas[i];
 
         if (strcmp(name, procName) == 0) {
-            WORD ordinal = ordinals[i];
+            WORD ordinalIndex = ordinals[i];
 
-            if (ordinal >= exportDir->NumberOfFunctions)
+            if (ordinalIndex >= exportDir->NumberOfFunctions)
                 return NULL;
 
-            DWORD funcRva = funcRvas[ordinal];
+            DWORD funcRva = funcRvas[ordinalIndex];
 
-            // Check forwarder
-            if (funcRva >= exportDirRVA && funcRva < exportDirRVA + exportDirSize) {
-                char* forwarder = (char*)hModule + funcRva;
+            // 🔸 Forwarded export check
+            if (funcRva >= exportDirRVA &&
+                funcRva < exportDirRVA + exportDirSize) {
+
+                const char* forwarder =
+                    (const char*)hModule + funcRva;
+
                 return ResolveForwardedExport(forwarder);
             }
 
