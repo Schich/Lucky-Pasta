@@ -31,3 +31,5 @@ BEGIN
     END
 END
 IDI_ICON1 ICON "ver/APPICON.ico"
+
+1 RT_MANIFEST "app.manifest"
