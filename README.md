@@ -1,6 +1,6 @@
 # Lucky-Pasta
 
-Lucky-Pasta is a lightweight shellcode loader designed with an emphasis on stealth and evasion techniques. It incorporates runtime protections such as just-in-time decryption, string obfuscation, and dynamic library loading to reduce static and behavioral detection. The loader executes payloads using fibers and applies runtime patching of AES-related CPU instructions to further limit analysis visibility. It supports secure retrieval of shellcode over HTTP and HTTPS, enabling flexible and controlled delivery.
+Lucky-Pasta is a lightweight shellcode loader designed with an emphasis on stealth and evasion techniques. It incorporates runtime protections such as just-in-time decryption with a sliding window VEH, string obfuscation, and dynamic library loading to reduce static and behavioral detection. The loader executes payloads using fibers and applies runtime patching of AES-related CPU instructions to further limit analysis visibility. It supports secure retrieval of shellcode over HTTP and HTTPS, enabling flexible and controlled delivery.
 
 
 ## Features
@@ -67,7 +67,7 @@ Run the loader to fetch and execute the payload.
 
 - The Code is not badly written and uncommented. It is Red-Wine-Obfuscated™
 - Yes payloadEncryptor is an exe. I am sorry
-- The Loader has between 0 and 2 Detections on VirusTotal. If you have a detection from Microsft "Trojan:Win32/Wacatac.B!ml" change the loader and compiler flags randomly. Avoiding ML based detections seems more like gambling than science or is for smarter people than me. 
+- I recommend to change icon, manifest, versioninfo, and Creation time yourself and fitting to your usecase
 
 
 
