@@ -177,7 +177,7 @@ FARPROC PebGetProcAddress(HMODULE hModule, LPCSTR procName) {
 
             DWORD funcRva = funcRvas[ordinalIndex];
 
-            // 🔸 Forwarded export check
+            // Forwarded export check
             if (funcRva >= exportDirRVA &&
                 funcRva < exportDirRVA + exportDirSize) {
 

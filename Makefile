@@ -1,10 +1,12 @@
+export SOURCE_DATE_EPOCH := 1609459200
+
 # compilers
 CC = x86_64-w64-mingw32-gcc
 WINDRES = x86_64-w64-mingw32-windres
 
 # flags
-CFLAGS = -O3 -std=c99 -D_WINDOWS -D_MINGW_USE_STD_THREAD -fstack-protector -mwindows -flto
-LDFLAGS = -Wl,--no-insert-timestamp -Wl,--dynamicbase -Wl,--nxcompat -flto
+CFLAGS = -O3 -D_MINGW_USE_STD_THREAD -fstack-protector -mwindows -ffunction-sections -fdata-sections
+LDFLAGS =  -Wl,--dynamicbase -Wl,--nxcompat   -Wl,--gc-sections
 
 # directories
 INC_DIR = ./inc
