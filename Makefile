@@ -6,7 +6,7 @@ WINDRES = x86_64-w64-mingw32-windres
 
 # flags
 CFLAGS = -O3 -D_MINGW_USE_STD_THREAD -fstack-protector -mwindows -ffunction-sections -fdata-sections
-LDFLAGS =  -Wl,--dynamicbase -Wl,--nxcompat   -Wl,--gc-sections
+LDFLAGS =  -Wl,--dynamicbase -Wl,--nxcompat   -Wl,--gc-sections -mwindows -Wl,-subsystem,windows
 
 # directories
 INC_DIR = ./inc

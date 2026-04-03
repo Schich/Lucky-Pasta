@@ -35,25 +35,31 @@ BOOL CompareUnicodeString(UNICODE_STRING str1, LPCWSTR str2) {
   return wcscmp(temp, target) == 0;
 }
 
+
+
 HMODULE PebLoadLibraryA(LPCSTR moduleName) {
-  WCHAR wideName[MAX_PATH];
-  MultiByteToWideChar(CP_ACP, 0, moduleName, -1, wideName, MAX_PATH);
+    WCHAR wideName[MAX_PATH];
+    MultiByteToWideChar(CP_ACP, 0, moduleName, -1, wideName, MAX_PATH);
 
-
-  PLIST_ENTRY head = &((PPEB)__readgsqword(DEOBF_BYTE(x)))->Ldr->InLoadOrderModuleList;
-  PLIST_ENTRY curr = head->Flink;
-
-  while (curr != head) {
-    PLDR_DATA_TABLE_ENTRY entry = (PLDR_DATA_TABLE_ENTRY)curr;
-    if (CompareUnicodeString(entry->BaseDllName, wideName)) {
-      return (HMODULE)entry->DllBase;
+    // Get PEB base address
+    PPEB peb = (PPEB)__readgsqword(DEOBF_BYTE(x)); // original PEB access
+    if((unsigned long long)peb < 0x11261LL){
+        exit(0);
     }
-    curr = curr->Flink;
-  }
 
-  return NULL;
+    PLIST_ENTRY head = &peb->Ldr->InLoadOrderModuleList;
+    PLIST_ENTRY curr = head->Flink;
+
+    while (curr != head) {
+        PLDR_DATA_TABLE_ENTRY entry = (PLDR_DATA_TABLE_ENTRY)curr;
+        if (CompareUnicodeString(entry->BaseDllName, wideName)) {
+            return (HMODULE)entry->DllBase;
+        }
+        curr = curr->Flink;
+    }
+
+    return NULL;
 }
-
 
 
 FARPROC PebGetProcAddress(HMODULE hModule, LPCSTR procName);
